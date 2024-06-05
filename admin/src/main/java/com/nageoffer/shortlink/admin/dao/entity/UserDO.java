@@ -11,7 +11,7 @@ import java.util.Date;
  * 用户持久层实体
  */
 @Data
-@TableName("t_user_0")
+@TableName("t_user")
 public class UserDO {
     private Long id;
     private String username;
