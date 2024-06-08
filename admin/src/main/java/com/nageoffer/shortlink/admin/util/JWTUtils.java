@@ -12,9 +12,9 @@ public class JWTUtils {
 
     private static final String jwtToken = "123456Mszlu!@###$$";
 
-    public static String createToken(Long userId){
+    public static String createToken(String userName){
         Map<String,Object> claims = new HashMap<>();
-        claims.put("userId",userId);
+        claims.put("userName",userName);
         JwtBuilder jwtBuilder = Jwts.builder()
                 .signWith(SignatureAlgorithm.HS256, jwtToken) // 签发算法，秘钥为jwtToken
                 .setClaims(claims) // body数据，要唯一，自行设置
@@ -35,10 +35,10 @@ public class JWTUtils {
     }
 
     public static void main(String[] args) {
-        String token = JWTUtils.createToken(2000L);
+        String token = JWTUtils.createToken("czq");
         System.out.println(token);
         Map<String, Object> stringObjectMap = JWTUtils.checkToken(token);
-        System.out.println(stringObjectMap);
+        System.out.println(stringObjectMap.get("userName"));
     }
 
 }
