@@ -101,7 +101,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         Boolean hasLogin=stringRedisTemplate.hasKey("login:" + userDO.getUsername());
         if(hasLogin!=null&&hasLogin){
             throw new ClientException("用户已登录");
-        }denglu
+        }
         String token = JWTUtils.createToken(userDO.getUsername());
         stringRedisTemplate.opsForHash().put("login:" + userDO.getUsername(), token, JSON.toJSONString(userDO));
         stringRedisTemplate.expire("login:" + userDO.getUsername(),30L, TimeUnit.DAYS);
