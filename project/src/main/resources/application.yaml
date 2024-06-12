@@ -1,2 +1,14 @@
 server:
   port: 8001
+
+spring:
+  application:
+    name: short-link-project
+  datasource:
+    driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver
+    url: jdbc:shardingsphere:classpath:shardingsphere-config-${database.env:dev}.yaml
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: 123456
