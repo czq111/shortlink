@@ -140,6 +140,14 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
 
     @Override
     public void sortGroup(List<ShortLinkGroupSortReqDTO> requestParam) {
-
+        requestParam.forEach(each ->{
+            LambdaUpdateWrapper<GroupDO> eq = Wrappers.lambdaUpdate(GroupDO.class)
+                    .eq(GroupDO::getUsername, UserContext.getUsername())
+                    .eq(GroupDO::getGid, each.getGid())
+                    .eq(GroupDO::getDelFlag, 0);
+            GroupDO groupDO=new GroupDO();
+            groupDO.setSortOrder(each.getSortOrder());
+            baseMapper.update(groupDO, eq);
+        });
     }
 }
