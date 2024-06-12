@@ -71,6 +71,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
                             .gid(gid)
                             .sortOrder(0)
                             .username(username)
+                            .name(groupName)
                             .build();
                     baseMapper.insert(groupDO);
                     gidRegisterCachePenetrationBloomFilter.add(gid);
