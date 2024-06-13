@@ -24,7 +24,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
         String shortLinkSuffix=generateSuffix(requestParam);
-        String fullShortUrl=requestParam.getDomain()+shortLinkSuffix;
+        String fullShortUrl=requestParam.getDomain()+"/"+shortLinkSuffix;
         ShortLinkDO shortLinkDO = ShortLinkDO.builder()
                 .domain(requestParam.getDomain())
                 .originUrl(requestParam.getOriginUrl())
@@ -69,7 +69,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             originUrl+= UUID.randomUUID().toString(); //冲突后拼上一个随机值减少冲突
             shortUri= HashUtil.hashToBase62(originUrl);
             //判断布隆过滤器有没有存在当前短链接
-            if(!shortUriCreateCachePenetrationBloomFilter.contains(requestParam.getDomain()+shortUri)){
+            if(!shortUriCreateCachePenetrationBloomFilter.contains(requestParam.getDomain()+"/"+shortUri)){
                 break;
             }
             generateCount++;
