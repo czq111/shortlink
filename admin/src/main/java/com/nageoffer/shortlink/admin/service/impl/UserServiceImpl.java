@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.nageoffer.shortlink.admin.common.biz.user.UserContext;
 import com.nageoffer.shortlink.admin.common.constant.RedisCacheConstant;
 import com.nageoffer.shortlink.admin.common.convention.exception.ClientException;
 import com.nageoffer.shortlink.admin.common.enums.UserErrorCodeEnum;
@@ -83,6 +84,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     @Override
     public void update(UserUpdateReqDTO requestParam) {
         //TODO 验证当前用户名是否为登录用户名
+        if (!requestParam.getUsername().equals(UserContext.getUsername()))
+            throw new ClientException("非法修改");
         LambdaUpdateWrapper<UserDO> updateWrapper = Wrappers.lambdaUpdate(UserDO.class)
                 .eq(UserDO::getUsername, requestParam.getUsername());
         baseMapper.update(BeanUtil.toBean(requestParam, UserDO.class), updateWrapper);
@@ -98,29 +101,29 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         if (userDO == null) {
             throw new ClientException(UserErrorCodeEnum.USER_NULL);
         }
-        Boolean hasLogin=stringRedisTemplate.hasKey("login:" + userDO.getUsername());
-        if(hasLogin!=null&&hasLogin){
+        Boolean hasLogin = stringRedisTemplate.hasKey("login:" + userDO.getUsername());
+        if (hasLogin != null && hasLogin) {
             throw new ClientException("用户已登录");
         }
         String token = JWTUtils.createToken(userDO.getUsername());
         stringRedisTemplate.opsForHash().put("login:" + userDO.getUsername(), token, JSON.toJSONString(userDO));
-        stringRedisTemplate.expire("login:" + userDO.getUsername(),30L, TimeUnit.DAYS);
+        stringRedisTemplate.expire("login:" + userDO.getUsername(), 30L, TimeUnit.DAYS);
         //stringRedisTemplate.opsForValue().set("TOKEN_" + token, JSON.toJSONString(userDO),1, TimeUnit.DAYS);
         return new UserLoginRespDTO(token);
     }
 
     @Override
-    public Boolean checkLogin(String username,String token) {
-        return stringRedisTemplate.opsForHash().get("login:"+username,token)!=null;
+    public Boolean checkLogin(String username, String token) {
+        return stringRedisTemplate.opsForHash().get("login:" + username, token) != null;
     }
 
     @Override
     public void logout(String username, String token) {
-        if(checkLogin(username,token)){
-            stringRedisTemplate.delete("login:"+username);
+        if (checkLogin(username, token)) {
+            stringRedisTemplate.delete("login:" + username);
             return;
         }
-        throw  new ClientException("用户TOKEN不存在或未登录");
+        throw new ClientException("用户TOKEN不存在或未登录");
 
     }
 }
