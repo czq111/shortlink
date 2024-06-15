@@ -17,6 +17,7 @@ public class ShortLinkController {
 
     ShortLinkRemoteService shortLinkRemoteService = new ShortLinkRemoteService(){
     };
+
     /*
     分页查询短链接
      */
