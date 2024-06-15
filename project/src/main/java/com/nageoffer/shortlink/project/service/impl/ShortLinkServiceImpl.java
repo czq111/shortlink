@@ -2,6 +2,7 @@ package com.nageoffer.shortlink.project.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -11,6 +12,7 @@ import com.nageoffer.shortlink.project.dao.mapper.ShortLinkMapper;
 import com.nageoffer.shortlink.project.dto.req.ShortLinkCreateReqDTO;
 import com.nageoffer.shortlink.project.dto.req.ShortLinkPageReqDTO;
 import com.nageoffer.shortlink.project.dto.resp.ShortLinkCreateRespDTO;
+import com.nageoffer.shortlink.project.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import com.nageoffer.shortlink.project.dto.resp.ShortLinkPageRespDTO;
 import com.nageoffer.shortlink.project.service.ShortLinkService;
 import com.nageoffer.shortlink.project.util.HashUtil;
@@ -20,6 +22,8 @@ import org.redisson.api.RBloomFilter;
 import org.springframework.stereotype.Service;
 import org.yaml.snakeyaml.constructor.DuplicateKeyException;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -27,10 +31,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLinkDO> implements ShortLinkService {
     private final RBloomFilter<String> shortUriCreateCachePenetrationBloomFilter;
+
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
-        String shortLinkSuffix=generateSuffix(requestParam);
-        String fullShortUrl=requestParam.getDomain()+"/"+shortLinkSuffix;
+        String shortLinkSuffix = generateSuffix(requestParam);
+        String fullShortUrl = requestParam.getDomain() + "/" + shortLinkSuffix;
         ShortLinkDO shortLinkDO = ShortLinkDO.builder()
                 .domain(requestParam.getDomain())
                 .originUrl(requestParam.getOriginUrl())
@@ -46,12 +51,12 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .totalUip(0)
                 .delTime(0L)
                 .fullShortUrl(fullShortUrl)
-       //         .favicon(getFavicon(requestParam.getOriginUrl()))
+                //         .favicon(getFavicon(requestParam.getOriginUrl()))
                 .build();
-        try{
+        try {
             baseMapper.insert(shortLinkDO);
-        }catch (DuplicateKeyException ex){
-            if(!shortUriCreateCachePenetrationBloomFilter.contains(shortLinkDO.getGid())){
+        } catch (DuplicateKeyException ex) {
+            if (!shortUriCreateCachePenetrationBloomFilter.contains(shortLinkDO.getGid())) {
                 shortUriCreateCachePenetrationBloomFilter.add(fullShortUrl);
             }
             throw new ServiceException(String.format("短链接：%s 生成重复", fullShortUrl));
@@ -72,23 +77,36 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .eq(ShortLinkDO::getDelFlag, 0)
                 .orderByDesc(ShortLinkDO::getCreateTime);
         IPage<ShortLinkDO> resultPage = baseMapper.selectPage(requestParam, eq);
-        return resultPage.convert(each-> BeanUtil.toBean(each,ShortLinkPageRespDTO.class));
+        return resultPage.convert(each -> BeanUtil.toBean(each, ShortLinkPageRespDTO.class));
+    }
+
+    @Override
+    public List<ShortLinkGroupCountQueryRespDTO> listGroupShortLinkCount(List<String> requestParam) {
+        QueryWrapper<ShortLinkDO> queryWrapper = Wrappers.query(new ShortLinkDO())
+                .select("gid as gid, count(*) as shortLinkCount")
+                .in("gid", requestParam)
+                .eq("enable_status", 0)
+                .eq("del_flag", 0)
+                .eq("del_time", 0L)
+                .groupBy("gid");
+        List<Map<String, Object>> shortLinkDOList = baseMapper.selectMaps(queryWrapper);
+        return BeanUtil.copyToList(shortLinkDOList, ShortLinkGroupCountQueryRespDTO.class);
     }
 
     private String generateSuffix(ShortLinkCreateReqDTO requestParam) {
-        int generateCount=0;
+        int generateCount = 0;
         String shortUri;
         String originUrl = requestParam.getOriginUrl();
-        while (true){
-            if(generateCount>10){
+        while (true) {
+            if (generateCount > 10) {
                 throw new ServiceException("短链接频繁生成，请稍后再试");
             }
-            shortUri= HashUtil.hashToBase62(originUrl);
+            shortUri = HashUtil.hashToBase62(originUrl);
             //判断布隆过滤器有没有存在当前短链接
-            if(!shortUriCreateCachePenetrationBloomFilter.contains(requestParam.getDomain()+"/"+shortUri)){
+            if (!shortUriCreateCachePenetrationBloomFilter.contains(requestParam.getDomain() + "/" + shortUri)) {
                 break;
             }
-            originUrl+= UUID.randomUUID().toString(); //冲突后拼上一个随机值减少冲突
+            originUrl += UUID.randomUUID().toString(); //冲突后拼上一个随机值减少冲突
             generateCount++;
         }
         return shortUri;

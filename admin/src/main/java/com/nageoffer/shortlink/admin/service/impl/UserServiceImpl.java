@@ -75,6 +75,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                     if (insert < 1) {
                         throw new ClientException(UserErrorCodeEnum.USER_SAVE_ERROR);
                     }
+                    //TODO 注册用户后新增默认分组，可以丢给线程池去做
                     groupService.saveGroup(requestParam.getUsername(),"默认分组");
                     userRegisterCachePenetrationBloomFilter.add(requestParam.getUsername());
                 } catch (DuplicateKeyException e) {

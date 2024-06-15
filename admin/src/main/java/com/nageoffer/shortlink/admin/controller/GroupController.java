@@ -19,6 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GroupController {
     private final GroupService groupService;
+
     /**
      * 新增短链接分组
      */
