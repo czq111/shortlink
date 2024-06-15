@@ -14,6 +14,7 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(jwtTokenInterceptor);
+        registry.addInterceptor(jwtTokenInterceptor).excludePathPatterns("/api/short-link/v1/page")
+                .excludePathPatterns("/api/short-link/v1/create");
     }
 }
