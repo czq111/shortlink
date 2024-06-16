@@ -17,14 +17,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class ShortLinkController {
 
-    ShortLinkRemoteService shortLinkRemoteService = new ShortLinkRemoteService(){
+    ShortLinkRemoteService shortLinkRemoteService = new ShortLinkRemoteService() {
     };
 
     /*
     分页查询短链接
      */
     @GetMapping("/api/short-link/admin/v1/page")
-    public Result<IPage<ShortLinkPageRespDTO>> pageShortLink(ShortLinkPageReqDTO reqDTO){
+    public Result<IPage<ShortLinkPageRespDTO>> pageShortLink(ShortLinkPageReqDTO reqDTO) {
         return shortLinkRemoteService.pageShortLink(reqDTO);
     }
 
