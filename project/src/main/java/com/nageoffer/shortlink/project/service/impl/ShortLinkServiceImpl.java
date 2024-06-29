@@ -150,6 +150,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             uvCookie.setPath(StrUtil.sub(fullShortUrl,fullShortUrl.indexOf("/"),fullShortUrl.length()));
             ((HttpServletResponse) response).addCookie(uvCookie);
             uvFirstFlag.set(Boolean.TRUE);
+            //TODO 这里要设置过期时间，不然下一个小时访问缓存未失效，cookie没变的话导致数据库uv为0
             stringRedisTemplate.opsForSet().add(SHORT_LINK_STATS_UV_KEY+fullShortUrl,uv.get());
         };
         if(!ArrayUtil.isEmpty(cookies)){
@@ -159,6 +160,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .map(Cookie::getValue)
                     .ifPresentOrElse(each->{
                         uv.set(each);
+                        //TODO 这里要设置过期时间，不然下一个小时访问缓存未失效，cookie没变的话导致数据库uv为0
                         Long uvAdd = stringRedisTemplate.opsForSet().add(SHORT_LINK_STATS_UV_KEY + fullShortUrl, each);
                         uvFirstFlag.set(uvAdd!=null && uvAdd > 0L);
                     },addResponseCookieTask);
