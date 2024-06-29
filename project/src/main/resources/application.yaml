@@ -20,3 +20,6 @@ spring:
 short-link:
   domain:
     default: nurl.ink
+  stats:
+    locale:
+      amap-key: 824c511f0997586ea016f979fdb23087
