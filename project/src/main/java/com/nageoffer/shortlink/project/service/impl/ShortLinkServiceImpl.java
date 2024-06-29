@@ -1,6 +1,9 @@
 package com.nageoffer.shortlink.project.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.date.Week;
+import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -11,8 +14,10 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.nageoffer.shortlink.project.common.convention.exception.ClientException;
 import com.nageoffer.shortlink.project.common.convention.exception.ServiceException;
 import com.nageoffer.shortlink.project.common.enums.VailDateTypeEnum;
+import com.nageoffer.shortlink.project.dao.entity.LinkAccessStatsDO;
 import com.nageoffer.shortlink.project.dao.entity.ShortLinkDO;
 import com.nageoffer.shortlink.project.dao.entity.ShortLinkGotoDO;
+import com.nageoffer.shortlink.project.dao.mapper.LinkAccessStatsMapper;
 import com.nageoffer.shortlink.project.dao.mapper.ShortLinkGotoMapper;
 import com.nageoffer.shortlink.project.dao.mapper.ShortLinkMapper;
 import com.nageoffer.shortlink.project.dto.req.ShortLinkCreateReqDTO;
@@ -26,6 +31,8 @@ import com.nageoffer.shortlink.project.util.HashUtil;
 import com.nageoffer.shortlink.project.util.LinkUtil;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -46,6 +53,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.nageoffer.shortlink.project.common.constant.RedisKeyConstant.*;
 
@@ -57,17 +66,19 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final ShortLinkGotoMapper shortLinkGotoMapper;
     private final StringRedisTemplate stringRedisTemplate;
     private final RedissonClient redissonClient;
+    private final LinkAccessStatsMapper linkAccessStatsMapper;
 
     @Value("${short-link.domain.default}")
     private String createShortLinkDefaultDomain;
 
     @SneakyThrows
     @Override
-    public void restoreUrl(String shortUri, ServletRequest request, ServletResponse response) {
+    public void  restoreUrl(String shortUri, ServletRequest request, ServletResponse response) {
         String serverName = request.getServerName();
         String fullShortUrl = serverName + "/" + shortUri;
         String originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
         if (StrUtil.isNotBlank(originalLink)) {
+            shortLinkStats(fullShortUrl,request,response);
             ((HttpServletResponse) response).sendRedirect(originalLink);
             return;
         }
@@ -86,6 +97,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         try {
             originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
             if (StrUtil.isNotBlank(originalLink)) {
+                shortLinkStats(fullShortUrl,request,response);
                 ((HttpServletResponse) response).sendRedirect(originalLink);
                 return;
             }
@@ -118,11 +130,62 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     String.format(GOTO_SHORT_LINK_KEY, fullShortUrl),
                     shortLinkDO.getOriginUrl(),
                     LinkUtil.getLinkCacheValidTime(shortLinkDO.getValidDate()), TimeUnit.MILLISECONDS);
+            shortLinkStats(fullShortUrl,request,response);
             ((HttpServletResponse) response).sendRedirect(shortLinkDO.getOriginUrl());
 
         } finally {
             lock.unlock();
         }
+    }
+
+    private void shortLinkStats(String fullShortUrl, ServletRequest request, ServletResponse response) {
+        //pv vu uip （pv每次加一，uv同一个cookie 不加一，相同uip不加一
+        AtomicBoolean uvFirstFlag = new AtomicBoolean();
+        Cookie[] cookies = ((HttpServletRequest) request).getCookies();
+        AtomicReference<String> uv=new AtomicReference<>();
+        Runnable addResponseCookieTask=()->{
+            uv.set(UUID.randomUUID().toString());
+            Cookie uvCookie = new Cookie("uv", uv.get());
+            uvCookie.setMaxAge(60 * 60 * 24 * 30);
+            uvCookie.setPath(StrUtil.sub(fullShortUrl,fullShortUrl.indexOf("/"),fullShortUrl.length()));
+            ((HttpServletResponse) response).addCookie(uvCookie);
+            uvFirstFlag.set(Boolean.TRUE);
+            stringRedisTemplate.opsForSet().add(SHORT_LINK_STATS_UV_KEY+fullShortUrl,uv.get());
+        };
+        if(!ArrayUtil.isEmpty(cookies)){
+            Arrays.stream(cookies)
+                    .filter(each->Objects.equals(each.getName(),"uv"))
+                    .findFirst()
+                    .map(Cookie::getValue)
+                    .ifPresentOrElse(each->{
+                        uv.set(each);
+                        Long uvAdd = stringRedisTemplate.opsForSet().add(SHORT_LINK_STATS_UV_KEY + fullShortUrl, each);
+                        uvFirstFlag.set(uvAdd!=null && uvAdd > 0L);
+                    },addResponseCookieTask);
+        }else {
+            addResponseCookieTask.run();
+        }
+        String remoteAddr = LinkUtil.getActualIp(((HttpServletRequest) request));
+        String os = LinkUtil.getOs(((HttpServletRequest) request));
+        String browser = LinkUtil.getBrowser(((HttpServletRequest) request));
+        String device = LinkUtil.getDevice(((HttpServletRequest) request));
+        String network = LinkUtil.getNetwork(((HttpServletRequest) request));
+        Long uipAdded = stringRedisTemplate.opsForSet().add(SHORT_LINK_STATS_UIP_KEY + fullShortUrl, remoteAddr);
+        boolean uipFirstFlag = uipAdded != null && uipAdded > 0L;
+        Date currentDate = new Date();
+        int hour = DateUtil.hour(currentDate, true);
+        Week week = DateUtil.dayOfWeekEnum(currentDate);
+        int weekValue = week.getIso8601Value();
+        LinkAccessStatsDO linkAccessStatsDO =LinkAccessStatsDO.builder()
+                .pv(1)
+                .uv(uvFirstFlag.get()?1:0)
+                .uip(uipFirstFlag?1:0)
+                .date(currentDate)
+                .weekday(weekValue)
+                .hour(hour)
+                .fullShortUrl(fullShortUrl)
+                .build();
+        linkAccessStatsMapper.shortLinkStats(linkAccessStatsDO);
     }
 
     @Override
