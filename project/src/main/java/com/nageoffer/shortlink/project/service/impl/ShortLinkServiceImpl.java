@@ -72,6 +72,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final LinkDeviceStatsMapper linkDeviceStatsMapper;
     private final LinkNetworkStatsMapper linkNetworkStatsMapper;
     private final LinkOsStatsMapper linkOsStatsMapper;
+    private final LinkAccessLogsMapper linkAccessLogsMapper;
 
     @Value("${short-link.domain.default}")
     private String createShortLinkDefaultDomain;
@@ -246,6 +247,17 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .date(currentDate)
                 .build();
         linkNetworkStatsMapper.shortLinkNetworkState(linkNetworkStatsDO);
+        LinkAccessLogsDO linkAccessLogsDO = LinkAccessLogsDO.builder()
+                .user(uv.get())
+                .ip(remoteAddr)
+                .browser(browser)
+                .os(os)
+                .network(network)
+                .device(device)
+                .locale(StrUtil.join("-", "中国", actualProvince, actualCity))
+                .fullShortUrl(fullShortUrl)
+                .build();
+        linkAccessLogsMapper.insert(linkAccessLogsDO);
     }
 
     @Override
