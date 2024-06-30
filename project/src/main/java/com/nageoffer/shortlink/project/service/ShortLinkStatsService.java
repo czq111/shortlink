@@ -17,9 +17,6 @@
 
 package com.nageoffer.shortlink.project.service;
 
-import com.nageoffer.shortlink.project.dto.req.ShortLinkStatsReqDTO;
-import com.nageoffer.shortlink.project.dto.resp.ShortLinkStatsRespDTO;
-
 /**
  * 短链接监控接口层
  * 公众号：马丁玩编程，回复：加群，添加马哥微信（备注：link）获取项目资料
@@ -32,7 +29,7 @@ public interface ShortLinkStatsService {
      * @param requestParam 获取短链接监控数据入参
      * @return 短链接监控数据
      */
-    ShortLinkStatsRespDTO oneShortLinkStats(ShortLinkStatsReqDTO requestParam);
+//    ShortLinkStatsRespDTO oneShortLinkStats(ShortLinkStatsReqDTO requestParam);
 
 //    /**
 //     * 获取分组短链接监控数据
