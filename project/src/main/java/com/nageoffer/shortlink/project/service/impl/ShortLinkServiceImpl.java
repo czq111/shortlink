@@ -420,12 +420,14 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .totalUv(hasShortLinkDO.getTotalUv())
                     .totalUip(hasShortLinkDO.getTotalUip())
                     .fullShortUrl(hasShortLinkDO.getFullShortUrl())
-                    //  .favicon(getFavicon(requestParam.getOriginUrl()))
+                    .favicon(getFavicon(requestParam.getOriginUrl()))
                     .delTime(0L)
                     .build();
             baseMapper.insert(shortLinkDO);
         }
         //短链接缓存和数据库一致性
+        //首先时间不一致要删除对应跳转的缓存（因为可能设置为过期了），原始链接变了，自然也要删除跳转缓存
+        //其次，如果原始链接已经过期，而修改后的时间未过期，那么短链接 不存在缓存空值的地方 也要删除
         if (!Objects.equals(hasShortLinkDO.getValidDateType(), requestParam.getValidDateType())
                 || !Objects.equals(hasShortLinkDO.getValidDate(), requestParam.getValidDate())
                 || !Objects.equals(hasShortLinkDO.getOriginUrl(), requestParam.getOriginUrl())) {
