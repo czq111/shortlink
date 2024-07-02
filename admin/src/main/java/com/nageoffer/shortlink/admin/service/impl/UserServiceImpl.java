@@ -1,6 +1,7 @@
 package com.nageoffer.shortlink.admin.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -29,7 +30,10 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import static com.nageoffer.shortlink.admin.common.constant.RedisCacheConstant.USER_LOGIN_KEY;
 
 
 /**
@@ -110,13 +114,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         if (userDO == null) {
             throw new ClientException(UserErrorCodeEnum.USER_NULL);
         }
-        Boolean hasLogin = stringRedisTemplate.hasKey("login:" + userDO.getUsername());
-        if (hasLogin != null && hasLogin) {
-            throw new ClientException("用户已登录");
+//        Boolean hasLogin = stringRedisTemplate.hasKey("login:" + userDO.getUsername());
+//        if (hasLogin != null && hasLogin) {
+//            throw new ClientException("用户已登录");
+//        }
+        Map<Object, Object> hasLoginMap = stringRedisTemplate.opsForHash().entries(USER_LOGIN_KEY + requestParam.getUsername());
+        if (CollUtil.isNotEmpty(hasLoginMap)) {
+            stringRedisTemplate.expire(USER_LOGIN_KEY + requestParam.getUsername(), 30L, TimeUnit.MINUTES);
+            String token = hasLoginMap.keySet().stream()
+                    .findFirst()
+                    .map(Object::toString)
+                    .orElseThrow(() -> new ClientException("用户登录错误"));
+            return new UserLoginRespDTO(token);
         }
         String token = JWTUtils.createToken(userDO.getUsername());
-        stringRedisTemplate.opsForHash().put("login:" + userDO.getUsername(), token, JSON.toJSONString(userDO));
-        stringRedisTemplate.expire("login:" + userDO.getUsername(), 30L, TimeUnit.DAYS);
+        stringRedisTemplate.opsForHash().put(USER_LOGIN_KEY + userDO.getUsername(), token, JSON.toJSONString(userDO));
+        stringRedisTemplate.expire(USER_LOGIN_KEY + userDO.getUsername(), 30L, TimeUnit.DAYS);
         //stringRedisTemplate.opsForValue().set("TOKEN_" + token, JSON.toJSONString(userDO),1, TimeUnit.DAYS);
         return new UserLoginRespDTO(token);
     }
