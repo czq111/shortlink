@@ -17,14 +17,13 @@
 
 package com.nageoffer.shortlink.admin.remote.dto.req;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.Data;
 
 /**
- * 短链接分页请求参数
+ * 分组短链接监控请求参数
  */
 @Data
-public class ShortLinkPageReqDTO extends Page {
+public class ShortLinkGroupStatsReqDTO {
 
     /**
      * 分组标识
@@ -32,7 +31,12 @@ public class ShortLinkPageReqDTO extends Page {
     private String gid;
 
     /**
-     * 排序标识
+     * 开始日期
      */
-    private String orderTag;
+    private String startDate;
+
+    /**
+     * 结束日期
+     */
+    private String endDate;
 }

@@ -15,24 +15,31 @@
  * limitations under the License.
  */
 
-package com.nageoffer.shortlink.admin.remote.dto.req;
+package com.nageoffer.shortlink.admin.remote.dto.resp;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 /**
- * 短链接分页请求参数
+ * 短链接批量创建响应对象
  */
 @Data
-public class ShortLinkPageReqDTO extends Page {
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ShortLinkBatchCreateRespDTO {
 
     /**
-     * 分组标识
+     * 成功数量
      */
-    private String gid;
+    private Integer total;
 
     /**
-     * 排序标识
+     * 批量创建返回参数
      */
-    private String orderTag;
+    private List<ShortLinkBaseInfoRespDTO> baseLinkInfos;
 }

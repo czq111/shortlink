@@ -15,24 +15,37 @@
  * limitations under the License.
  */
 
-package com.nageoffer.shortlink.admin.remote.dto.req;
+package com.nageoffer.shortlink.admin.remote.dto.resp;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
+import java.util.Date;
+
 /**
- * 短链接分页请求参数
+ * 短链接基础访问监控响应参数
  */
 @Data
-public class ShortLinkPageReqDTO extends Page {
+public class ShortLinkStatsAccessDailyRespDTO {
 
     /**
-     * 分组标识
+     * 日期
      */
-    private String gid;
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
+    private Date date;
 
     /**
-     * 排序标识
+     * 访问量
      */
-    private String orderTag;
+    private Integer pv;
+
+    /**
+     * 独立访客数
+     */
+    private Integer uv;
+
+    /**
+     * 独立IP数
+     */
+    private Integer uip;
 }

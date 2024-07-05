@@ -13,7 +13,7 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(jwtTokenInterceptor).excludePathPatterns("/api/short-link/v1/user/login")
+        registry.addInterceptor(jwtTokenInterceptor).excludePathPatterns("/api/short-link/admin/v1/user/login")
                 .excludePathPatterns("/api/short-link/v1/user");
     }
 }

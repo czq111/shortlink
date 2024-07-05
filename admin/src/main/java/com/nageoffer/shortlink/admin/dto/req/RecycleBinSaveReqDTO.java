@@ -15,16 +15,15 @@
  * limitations under the License.
  */
 
-package com.nageoffer.shortlink.admin.remote.dto.req;
+package com.nageoffer.shortlink.admin.dto.req;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.Data;
 
 /**
- * 短链接分页请求参数
+ * 回收站保存功能
  */
 @Data
-public class ShortLinkPageReqDTO extends Page {
+public class RecycleBinSaveReqDTO {
 
     /**
      * 分组标识
@@ -32,7 +31,7 @@ public class ShortLinkPageReqDTO extends Page {
     private String gid;
 
     /**
-     * 排序标识
+     * 全部短链接
      */
-    private String orderTag;
+    private String fullShortUrl;
 }

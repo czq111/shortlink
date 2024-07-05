@@ -15,24 +15,43 @@
  * limitations under the License.
  */
 
-package com.nageoffer.shortlink.admin.remote.dto.req;
+package com.nageoffer.shortlink.admin.remote.dto.resp;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.alibaba.excel.annotation.ExcelProperty;
+import com.alibaba.excel.annotation.write.style.ColumnWidth;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
- * 短链接分页请求参数
+ * 短链接基础信息响应参数
+
  */
 @Data
-public class ShortLinkPageReqDTO extends Page {
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class ShortLinkBaseInfoRespDTO {
 
     /**
-     * 分组标识
+     * 描述信息
      */
-    private String gid;
+    @ExcelProperty("标题")
+    @ColumnWidth(40)
+    private String describe;
 
     /**
-     * 排序标识
+     * 短链接
      */
-    private String orderTag;
+    @ExcelProperty("短链接")
+    @ColumnWidth(40)
+    private String fullShortUrl;
+
+    /**
+     * 原始链接
+     */
+    @ExcelProperty("原始链接")
+    @ColumnWidth(80)
+    private String originUrl;
 }
