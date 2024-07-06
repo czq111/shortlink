@@ -16,6 +16,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import static com.nageoffer.shortlink.project.common.constant.RedisKeyConstant.USER_LOGIN_KEY;
+
 @Component
 @Slf4j
 public class JwtTokenInterceptor implements HandlerInterceptor {
@@ -47,7 +49,7 @@ public class JwtTokenInterceptor implements HandlerInterceptor {
         String username = (String) JWTUtils.checkToken(token).get("userName");
         //  String o = (String)redisTemplate.opsForValue().get("TOKEN_" + token);
 
-        String o = (String) redisTemplate.opsForHash().get("login:" + username, token);
+        String o = (String) redisTemplate.opsForHash().get(USER_LOGIN_KEY + username, token);
         UserDO sysUser = JSON.parseObject(o, UserDO.class);
         if (sysUser == null) {
             // Result res = Result.fail(-999, "未登录");

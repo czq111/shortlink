@@ -19,6 +19,7 @@ package com.nageoffer.shortlink.admin.remote;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nageoffer.shortlink.admin.common.convention.result.Result;
+import com.nageoffer.shortlink.admin.config.FeignConfig;
 import com.nageoffer.shortlink.admin.dto.req.RecycleBinRecoverReqDTO;
 import com.nageoffer.shortlink.admin.dto.req.RecycleBinRemoveReqDTO;
 import com.nageoffer.shortlink.admin.dto.req.RecycleBinSaveReqDTO;
@@ -40,7 +41,7 @@ import java.util.List;
 /**
  * 短链接中台远程调用服务
  */
-@FeignClient(value = "short-link-project")
+@FeignClient(value = "short-link-project",configuration = FeignConfig.class)
 public interface ShortLinkActualRemoteService {
 
     /**
