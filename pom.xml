@@ -31,6 +31,7 @@
         <easyexcel.version>3.1.3</easyexcel.version>
         <jaxb-api.version>2.3.1</jaxb-api.version>
         <jsoup.version>1.15.3</jsoup.version>
+        <rocketmq-spring-boot-starter.version>2.2.3</rocketmq-spring-boot-starter.version>
     </properties>
     <dependencies>
         <dependency>
