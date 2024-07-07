@@ -42,7 +42,7 @@ public class ShortLinkStatusSaveProducer {
                 .build();
         SendResult sendResult;
         try{
-            sendResult=rocketMQTemplate.syncSend(statusSaveTopic, build);
+            sendResult=rocketMQTemplate.syncSend(statusSaveTopic, build, 2000L);
             log.info("[消息访问统计监控] 消息发送结果：{}，消息ID:{},消息keys：{}"
                     ,sendResult.getSendStatus(),sendResult.getMsgId(),keys);
         }catch (Throwable ex){
